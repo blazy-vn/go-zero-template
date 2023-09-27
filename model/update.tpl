@@ -19,10 +19,9 @@ func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context,sess
 }
 
 func (m *default{{.upperStartCamelObject}}Model) UpdateWithVersion(ctx context.Context,session sqlx.Session,{{if .containsIndexCache}}newData{{else}}data{{end}} *{{.upperStartCamelObject}}) error {
-
     {{if .containsIndexCache}}
-     oldVersion := newData.Version
-     newData.Version += 1
+    oldVersion := newData.Version
+    newData.Version += 1
     {{else}}
     oldVersion := data.Version
     data.Version += 1
