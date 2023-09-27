@@ -6,7 +6,7 @@ import (
 
 	{{if .time}}"time"{{end}}
 
-	"go-zero-douyin/common/xconst"
+	"go-zero-douyin/common/bconst"
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"github.com/zeromicro/go-zero/core/stores/builder"
