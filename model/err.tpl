@@ -6,4 +6,4 @@ import (
 )
 
 var ErrNotFound = sqlx.ErrNotFound
-var ErrNoRowsUpdate = errors.New("update db no rows change")
+var ErrNoRowsUpdate = errors.New("update db no rows affected")
