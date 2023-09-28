@@ -8,7 +8,7 @@ import (
 
 	"bcare/common/bconst"
 	"bcare/common/bmodel"
-	"github.com/Masterminds/squirrels"
+	"github.com/Masterminds/squirrel"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
