@@ -19,12 +19,17 @@ func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context,sess
 }
 
 func (m *default{{.upperStartCamelObject}}Model) UpdateWithVersion(ctx context.Context,session sqlx.Session,{{if .containsIndexCache}}newData{{else}}data{{end}} *{{.upperStartCamelObject}}) error {
+    versionData, ok := any(newData).(versionedData)
+	if !ok {
+		return bmodel.ErrNoVersionField
+	}
+
     {{if .containsIndexCache}}
-    oldVersion := newData.Version
-    newData.Version += 1
+    oldVersion := versionData.Version
+    versionData.Version += 1
     {{else}}
-    oldVersion := data.Version
-    data.Version += 1
+    oldVersion := versionData.Version
+    versionData.Version += 1
     {{end}}
 
 	var sqlResult sql.Result
@@ -63,23 +68,25 @@ func (m *default{{.upperStartCamelObject}}Model) UpdateWithVersion(ctx context.C
 }
 
 func (m *default{{.upperStartCamelObject}}Model) DeleteSoft(ctx context.Context,session sqlx.Session,data *{{.upperStartCamelObject}}) error {
-	data.Status = data.Id
-	data.DeletedAt = time.Now()
+	data.Status = bconst.StatusDeleted
+    data.DeletedAt = sql.NullTime{
+        Time:  time.Now(),
+        Valid: true,
+    }
 	if err:= m.UpdateWithVersion(ctx,session, data);err!= nil{
-		return errors.Wrapf(errors.New("delete soft failed "),"{{.upperStartCamelObject}}Model delete err : %+v",err)
+	    return fmt.Errorf("{{.upperStartCamelObject}}Model soft delete failed: %w", err)
 	}
 	return nil
 }
 
 func (m *default{{.upperStartCamelObject}}Model) FindSum(ctx context.Context,builder squirrel.SelectBuilder, field string) (float64,error) {
-
     if len(field) == 0 {
-        return 0, errors.Wrapf(errors.New("FindSum Least One Field"), "FindSum Least One Field")
+        return 0, bmodel.ErrNoAggregationField
     }
 
     builder = builder.Columns("IFNULL(SUM(" + field + "),0)")
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).ToSql()
 	if err != nil {
 		return 0, err
 	}
@@ -97,14 +104,13 @@ func (m *default{{.upperStartCamelObject}}Model) FindSum(ctx context.Context,bui
 }
 
 func (m *default{{.upperStartCamelObject}}Model) FindCount(ctx context.Context, builder squirrel.SelectBuilder, field string) (int64,error) {
-
     if len(field) == 0 {
-        return 0, errors.Wrapf(errors.New("FindCount Least One Field"), "FindCount Least One Field")
+		return 0, bmodel.ErrNoAggregationField
     }
 
 	builder = builder.Columns("COUNT(" + field + ")")
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).ToSql()
 	if err != nil {
 		return 0, err
 	}
@@ -131,7 +137,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindAll(ctx context.Context,bui
 		builder = builder.OrderBy(orderBy)
 	}
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +169,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindPageListByPage(ctx context.
 	}
 	offset := (page - 1) * pageSize
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).Offset(uint64(offset)).Limit(uint64(pageSize)).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).Offset(uint64(offset)).Limit(uint64(pageSize)).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +207,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindPageListByPageWithTotal(ctx
 	}
 	offset := (page - 1) * pageSize
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).Offset(uint64(offset)).Limit(uint64(pageSize)).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).Offset(uint64(offset)).Limit(uint64(pageSize)).ToSql()
 	if err != nil {
 		return nil,total, err
 	}
@@ -226,7 +232,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindPageListByIdDESC(ctx contex
 		builder = builder.Where(" id < ? " , preMinId)
 	}
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).OrderBy("id DESC").Limit(uint64(pageSize)).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).OrderBy("id DESC").Limit(uint64(pageSize)).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +257,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindPageListByIdASC(ctx context
 		builder = builder.Where(" id > ? " , preMaxId)
 	}
 
-	query, values, err := builder.Where("deleted = ?", bconst.StatusDeleteNo).OrderBy("id ASC").Limit(uint64(pageSize)).ToSql()
+	query, values, err := builder.Where("status != ?", bconst.StatusDeleted).OrderBy("id ASC").Limit(uint64(pageSize)).ToSql()
 	if err != nil {
 		return nil, err
 	}

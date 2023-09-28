@@ -7,6 +7,7 @@ import (
 	{{if .time}}"time"{{end}}
 
 	"bcare/common/bconst"
+	"bcare/common/bmodel"
 	"github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 	"github.com/zeromicro/go-zero/core/stores/builder"
