@@ -19,17 +19,12 @@ func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context,sess
 }
 
 func (m *default{{.upperStartCamelObject}}Model) UpdateWithVersion(ctx context.Context,session sqlx.Session,{{if .containsIndexCache}}newData{{else}}data{{end}} *{{.upperStartCamelObject}}) error {
-    versionData, ok := any({{if .containsIndexCache}}newData{{else}}data{{end}}).(bmodel.VersionedModel)
-	if !ok {
-		return bmodel.ErrNoVersionField
-	}
-
     {{if .containsIndexCache}}
-    oldVersion := versionData.Version
-    versionData.Version += 1
+    oldVersion := newData.Version
+	newData.Version += 1
     {{else}}
-    oldVersion := versionData.Version
-    versionData.Version += 1
+    oldVersion := data.Version
+	data.Version += 1
     {{end}}
 
 	var sqlResult sql.Result
